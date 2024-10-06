@@ -43,21 +43,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandGenerator\Generator.cs" />
-    <Compile Include="CommandGenerator\WorkBase\00WorkBase.cs" />
-    <Compile Include="CommandGenerator\WorkBase\01ReadBase.cs" />
-    <Compile Include="CommandGenerator\WorkBase\02WriteBase.cs" />
+    <Compile Include="ModbusLibrary\ModbusCore\06Generator.cs" />
+    <Compile Include="ModbusLibrary\ModbusCore\05TaskModule.cs" />
+    <Compile Include="ModbusLibrary\TaskModules\01ReadBase.cs" />
+    <Compile Include="ModbusLibrary\TaskModules\02WriteBase.cs" />
     <Compile Include="ModbusLibrary\ModbusCore\00ModbusManager.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\01DeviceInfo.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\02Interaction.cs" />
+    <Compile Include="ModbusLibrary\ModbusCore\04DeviceInfo.cs" />
+    <Compile Include="ModbusLibrary\ModbusCore\01AccessPort.cs" />
     <Compile Include="ModbusLibrary\ModbusCore\03IProcessRawData.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\04DataMemory.cs" />
+    <Compile Include="ModbusLibrary\ModbusCore\02DataMemory.cs" />
     <Compile Include="ModbusLibrary\Note.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ModbusLibrary\RawDataProcessors\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

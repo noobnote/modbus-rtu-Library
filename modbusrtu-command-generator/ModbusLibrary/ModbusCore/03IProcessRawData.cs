@@ -12,8 +12,6 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
     /// <typeparam name="T"></typeparam>
     public interface IRawDataProcessor<T> where T : IEnumerable<byte>
     {
-        //根据功能码区别的 存值器 worker（包含 需读取byte数、抓取数据包并返回、比较器【例如写操作时，比较发送、返回报文是否一致】）
-
         /// <summary>目标功能码
         /// 
         /// </summary>

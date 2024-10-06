@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace modbusrtu_command_generator.ModbusLibrary
+namespace modbusrtu_command_generator
 {
 
     /*
@@ -22,5 +22,10 @@ namespace modbusrtu_command_generator.ModbusLibrary
      * 
      * 3、还需要考虑读取超时的情况（例如 远程主机反馈的是报错报文，那么读取字节数就可能达不到readCount，也就跳不出循环）
      * 
+     * 
+     * 2024-10-07
+     * 1、【closed】DataMemory扩容方式不合理
+     * 2、添加即时任务方法应当改为 可等待。
+     * 3、ModbusManager类添加“注册原始数据处理器”方法
      */
 }
