@@ -15,7 +15,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <summary>目标功能码
         /// 
         /// </summary>
-        byte TargetFunc { get; set; }
+        byte TargetFunc { get; }
         /// <summary>抓取数据
         /// 
         /// </summary>

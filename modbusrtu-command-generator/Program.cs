@@ -1,4 +1,5 @@
-﻿using System;
+﻿using modbusrtu_command_generator.ModbusLibrary.ModbusCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

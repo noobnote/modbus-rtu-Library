@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace modbusrtu_command_generator
@@ -26,6 +27,9 @@ namespace modbusrtu_command_generator
         /// </summary>
         public DateTime ReceiveTime { get; set; }
         public override byte[] Command { get { return this._command; } }
+
+        public override ManualResetEvent WaitHandle { get; set; }
+
         public ReadBase(byte host, byte functionCode, ushort startAddress, ushort quantity)
         {
             this.Host = host;

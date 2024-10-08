@@ -1,4 +1,4 @@
-﻿using modbusrtu_command_generator.CommandGenerator.WorkBase;
+﻿using modbusrtu_command_generator.ModbusLibrary.RawDataProcessors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,10 +35,16 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
             }
         }
 
-        public static void AddImmediateTask(DeviceInfo deviceInfo, TaskModule task)
+        //public static void AddImmediateTask(DeviceInfo deviceInfo, TaskModule task)
+        //{
+        //    AccessPort accessPort = RetrieveOrCreate(deviceInfo);
+        //    accessPort.AddImmediateTask(task);
+        //}
+
+        public static WaitHandle RunOnceAsync(DeviceInfo deviceInfo, TaskModule task)
         {
             AccessPort accessPort = RetrieveOrCreate(deviceInfo);
-            accessPort.AddImmediateTask(task);
+            return accessPort.AddImmediateTask(task);
         }
 
         /// <summary>关闭端口
@@ -63,6 +69,41 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                 }
             }
         }
+
+        /// <summary>注册一个原始数据处理器
+        /// 
+        /// </summary>
+        /// <param name="deviceInfo"></param>
+        /// <param name="rawDataProcessor">数据处理器</param>
+        public static void RegistRawDataProcessor(DeviceInfo deviceInfo, IRawDataProcessor<IEnumerable<byte>> rawDataProcessor)
+        {
+            //内部类慎用。与使用了AccessLock的方法组合使用时，有死锁的可能
+            lock (AccessLock)
+            {
+                var pair = AccessPortCollection.FirstOrDefault(cell =>
+                {
+                    return (cell.Key.Port == deviceInfo.Port);
+                });
+
+                AccessPort accessPort = pair.Value;
+                if (accessPort != null)
+                {
+                    accessPort.RegistRawDataProcessor(rawDataProcessor);
+                }
+            }
+        }
+
+        /// <summary>预设原始数据处理器
+        /// 
+        /// </summary>
+        /// <param name="accessPort"></param>
+        private static void ConfigureRawDataProcessors(AccessPort accessPort)
+        {
+            accessPort?.RegistRawDataProcessor(new ProcessorFor03());
+            //其它数据处理器待扩展
+        }
+
+
         private static AccessPort RetrieveOrCreate(DeviceInfo deviceInfo)
         {
             AccessPort accessPort = null;
@@ -83,6 +124,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                 if (accessPort == null)
                 {
                     accessPort = new AccessPort(deviceInfo);
+                    ConfigureRawDataProcessors(accessPort);
                     AccessPortCollection.Add(deviceInfo, accessPort);
                 }
             }

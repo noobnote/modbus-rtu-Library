@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
@@ -23,6 +24,10 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// 
         /// </summary>
         public abstract ushort StartAddress { get; set; }
+        /// <summary>可等待句柄
+        /// 
+        /// </summary>
+        public abstract ManualResetEvent WaitHandle { get; set; }
         /// <summary>命令
         /// 
         /// </summary>

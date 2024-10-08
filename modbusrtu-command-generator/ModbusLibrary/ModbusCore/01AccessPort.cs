@@ -13,7 +13,10 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
     /// </summary>
     public class AccessPort
     {
-        
+
+        public delegate void AccessPortClosed(AccessPort accessPort);
+
+        public event AccessPortClosed AccessPortClosedEvent;
         private SerialPort _serialPort;
         private SerialPort SerialPort { get { return this._serialPort; } }
 
@@ -104,8 +107,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                             break;
                         case 2:
                             {
-
-
+                                this.AccessPortClosedEvent?.Invoke(this);
                                 return;
                             }
                     }
@@ -160,19 +162,19 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <summary>单次任务队列
         /// 
         /// </summary>
-        Queue<TaskModule> OnlyOnceTasks { get; set; }
+        Queue<TaskModule> OnlyOnceTasks { get; set; } = new Queue<TaskModule>();
         /// <summary>周期任务队列
         /// 
         /// </summary>
-        List<TaskModule> PeriodicTasks { get; set; }
+        List<TaskModule> PeriodicTasks { get; set; } = new List<TaskModule>();
         /// <summary>单次任务队列锁
         /// 
         /// </summary>
-        object OnlyOnceTasksLock { get; set; }
+        object OnlyOnceTasksLock { get; set; } = new object();
         /// <summary>周期任务队列锁
         /// 
         /// </summary>
-        object PeriodicTasksLock { get; set; }
+        object PeriodicTasksLock { get; set; } = new object();
 
         /// <summary>添加周期任务
         /// 
@@ -202,12 +204,15 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// 
         /// </summary>
         /// <param name="taskModule"></param>
-        public void AddImmediateTask(TaskModule taskModule)
+        public WaitHandle AddImmediateTask(TaskModule taskModule)
         {
+
+            taskModule.WaitHandle = new ManualResetEvent(false);
             lock (OnlyOnceTasksLock)
             {
                 OnlyOnceTasks.Enqueue(taskModule);
             }
+            return taskModule.WaitHandle;
         }
 
         /// <summary>执行列表中的任务
@@ -284,6 +289,8 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
 
                         SaveData(taskModule, processedData);
                     }
+
+                    taskModule.WaitHandle?.Set();
                 }
                 else
                 {
@@ -320,15 +327,14 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <summary>注册一个原始数据处理器
         /// 
         /// </summary>
-        /// <param name="host">远程主机站号</param>
         /// <param name="rawDataProcessor">数据处理器</param>
-        public void RegistRawDataProcessor(int host, IRawDataProcessor<IEnumerable<byte>> rawDataProcessor)
+        public void RegistRawDataProcessor(IRawDataProcessor<IEnumerable<byte>> rawDataProcessor)
         {
             lock (RawDataProcessorDicLock)
             {
-                if (RawDataProcessorDic.ContainsKey(host))
+                if (RawDataProcessorDic.ContainsKey(rawDataProcessor.TargetFunc))
                 {
-                    RawDataProcessorDic.Add(host, rawDataProcessor);
+                    RawDataProcessorDic.Add(rawDataProcessor.TargetFunc, rawDataProcessor);
                 }
             }
         }

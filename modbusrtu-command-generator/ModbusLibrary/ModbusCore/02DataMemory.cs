@@ -38,43 +38,54 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
             IR,
         }
 
-
+        /// <summary>目标主机站号
+        /// 
+        /// </summary>
         public int TargetHost { get; private set; }
         /// <summary>线圈状态 读写锁
         /// 
         /// </summary>
-        private object _CSLock { get; set; }
+        private object _CSLock { get; set; } = new object();
         /// <summary>离散输入状态 读写锁
         /// 
         /// </summary>
-        private object _DISLock { get; set; }
+        private object _DISLock { get; set; } = new object();
         /// <summary>保持寄存器 读写锁
         /// 
         /// </summary>
-        private object _HRLock { get; set; }
+        private object _HRLock { get; set; } = new object();
         /// <summary>输入寄存器 读写锁
         /// 
         /// </summary>
-        private object _IRLock { get; set; }
+        private object _IRLock { get; set; } = new object();
 
 
         /// <summary>线圈状态：Coil Status（CS）
         /// 
         /// </summary>
-        private byte[] CS { get; set; }
+        private byte[] CS { get; set; } = new byte[1];
 
         /// <summary>离散输入状态：Discrete Input Status（DIS）
         /// 
         /// </summary>
-        private byte[] DIS { get; set; }
+        private byte[] DIS { get; set; } = new byte[1];
         /// <summary>保持寄存器：Holding Register（HR）
         /// 
         /// </summary>
-        private byte[] HR { get; set; }
+        private byte[] HR { get; set; } = new byte[1];
         /// <summary>输入寄存器：Input Register（IR）
         /// 
         /// </summary>
-        private byte[] IR { get; set; }
+        private byte[] IR { get; set; } = new byte[1];
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="targetHost">目标主机站号</param>
+        public DataMemory(int targetHost)
+        {
+            this.TargetHost = targetHost;
+        }
 
         /// <summary>根据功能码判断存储区域
         /// 
