@@ -419,5 +419,26 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
             }
             return bytes;
         }
+
+        /// <summary>取值
+        /// 
+        /// </summary>
+        /// <param name="host">站号</param>
+        /// <param name="func">功能码</param>
+        /// <param name="startAddress">起始地址</param>
+        /// <param name="quantity">需要读取的byte数</param>
+        /// <returns></returns>
+        public byte[] GetValues(int host, int func, int startAddress, int quantity)
+        {
+            byte[] bytes = null;
+            lock (MemoryDicLock)
+            {
+                if (MemoryDic.ContainsKey(host))
+                {
+                    bytes = MemoryDic[host].GetValues(DataMemory.JudgeArea(func), startAddress, quantity);
+                }
+            }
+            return bytes;
+        }
     }
 }

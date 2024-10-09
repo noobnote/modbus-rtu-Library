@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="ModbusLibrary\ModbusCore\06Generator.cs" />
     <Compile Include="ModbusLibrary\ModbusCore\05TaskModule.cs" />
+    <Compile Include="ModbusLibrary\ModbusCore\07TypeConvertor.cs" />
     <Compile Include="ModbusLibrary\RawDataProcessors\ProcessorFor03.cs" />
     <Compile Include="ModbusLibrary\TaskModules\01ReadBase.cs" />
     <Compile Include="ModbusLibrary\TaskModules\02WriteBase.cs" />
@@ -54,6 +55,8 @@
     <Compile Include="ModbusLibrary\ModbusCore\03IProcessRawData.cs" />
     <Compile Include="ModbusLibrary\ModbusCore\02DataMemory.cs" />
     <Compile Include="ModbusLibrary\Note.cs" />
+    <Compile Include="ModbusLibrary\TypeConverters\Int32ArrayConvertor.cs" />
+    <Compile Include="ModbusLibrary\TypeConverters\Int32Convertor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

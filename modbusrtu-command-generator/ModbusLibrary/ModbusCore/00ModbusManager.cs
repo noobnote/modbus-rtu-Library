@@ -1,6 +1,8 @@
 ﻿using modbusrtu_command_generator.ModbusLibrary.RawDataProcessors;
+using modbusrtu_command_generator.ModbusLibrary.TypeConverters;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,7 +21,35 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         static object AccessLock { get; set; } = new object();
         static Dictionary<DeviceInfo, AccessPort> AccessPortCollection { get; set; } = new Dictionary<DeviceInfo, AccessPort>();
 
-        
+
+        static object TypeConvertorCollectionLock { get; set; } = new object();
+        static Dictionary<Type, ITypeConvertor> _typeConvertorCollection;
+        static Dictionary<Type, ITypeConvertor> TypeConvertorCollection
+        {
+            get
+            {
+                if (_typeConvertorCollection == null)
+                {
+                    _typeConvertorCollection = new Dictionary<Type, ITypeConvertor>();
+
+                    List<ITypeConvertor> list = new List<ITypeConvertor>()
+                    {
+                        new Int32ArrayConvertor(),
+                        new Int32Convertor(),
+                        //其它类型转换器 待扩展
+                    };
+
+                    foreach (var convert in list)
+                    {
+                        _typeConvertorCollection.Add(convert.TargetType, convert);
+                    }
+                }
+                return _typeConvertorCollection;
+            }
+            set { _typeConvertorCollection = value; }
+        }
+
+
         public static void AddPeriodicTask(DeviceInfo deviceInfo, TaskModule task)
         {
             AccessPort accessPort = RetrieveOrCreate(deviceInfo);
@@ -97,7 +127,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// 
         /// </summary>
         /// <param name="accessPort"></param>
-        private static void ConfigureRawDataProcessors(AccessPort accessPort)
+        private static void ConfigureRawDataProcessors(this AccessPort accessPort)
         {
             accessPort?.RegistRawDataProcessor(new ProcessorFor03());
             //其它数据处理器待扩展
@@ -124,7 +154,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                 if (accessPort == null)
                 {
                     accessPort = new AccessPort(deviceInfo);
-                    ConfigureRawDataProcessors(accessPort);
+                    accessPort.ConfigureRawDataProcessors();
                     AccessPortCollection.Add(deviceInfo, accessPort);
                 }
             }
@@ -179,11 +209,191 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         //}
 
 
-        public static T GetValues<T>()
+        /// <summary>注册一个类型转换器
+        /// 
+        /// </summary>
+        public static void RegistTypeConverter(ITypeConvertor typeConvertor)
         {
-            //字典查找转换器，然后执行转换
-            //或者再重载一个GetValues(),由调用者在参数列表中指定一个转换器（但是同时，也必须指定需要从缓冲区中取多少个地址）
+            lock (TypeConvertorCollectionLock)
+            {
+                if (!TypeConvertorCollection.ContainsKey(typeConvertor.TargetType))
+                {
+                    TypeConvertorCollection.Add(typeConvertor.TargetType, typeConvertor);
+                }
+            }
+        }
+
+
+
+
+        /// <summary>取值
+        /// 
+        /// </summary>
+        /// <typeparam name="T">目标类型</typeparam>
+        /// <param name="deviceInfo">设备信息</param>
+        /// <param name="host">设备站号</param>
+        /// <param name="func">功能码</param>
+        /// <param name="startAddress">起始地址</param>
+        /// <param name="byteSize">需读取字节数</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static T GetValues<T>(DeviceInfo deviceInfo, int host, int func, int startAddress, int byteSize)
+        {
+            ITypeConvertor convertor = null;
+            lock (TypeConvertorCollectionLock)
+            {
+                if (TypeConvertorCollection.ContainsKey(typeof(T)))
+                {
+                    convertor = TypeConvertorCollection[typeof(T)];
+                    //return (T)TypeConvertorCollection[typeof(T)].Convert(new byte[2]);
+                }
+            }
+            if (convertor != null)
+            {
+                AccessPort accessPort = null;
+                lock (AccessLock)
+                {
+                    accessPort = AccessPortCollection.FirstOrDefault(cell =>
+                    {
+                        return (cell.Key.Port == deviceInfo.Port);
+                        //return
+                        //   (cell.Key.DataBits == deviceInfo.DataBits) &&
+                        //   (cell.Key.StopBits == deviceInfo.StopBits) &&
+                        //   (cell.Key.Parity == deviceInfo.Parity) &&
+                        //   (cell.Key.Port == deviceInfo.Port) &&
+                        //   (cell.Key.BaudRate == deviceInfo.BaudRate) &&
+                        //   (cell.Key.Name == deviceInfo.Name);
+                    }).Value;
+                }
+
+                if (accessPort == null)
+                {
+                    throw new Exception("找不到设备对应端口");
+                }
+                byte[] bytes;
+                if (convertor.ByteSize > 0)
+                {
+                    bytes = accessPort.GetValues(host, func, startAddress, convertor.ByteSize);
+                }
+                else
+                { 
+                    bytes = accessPort.GetValues(host, func, startAddress, byteSize);
+                }
+
+                return (T)convertor.Convert(bytes);
+            }
+
+            return default(T);
+        }
+
+        /// <summary>取值
+        /// 
+        /// </summary>
+        /// <typeparam name="T">目标类型</typeparam>
+        /// <param name="deviceInfo">设备信息</param>
+        /// <param name="taskModule">任务</param>
+        /// <param name="byteSize">需读取字节数</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static T GetValues<T>(DeviceInfo deviceInfo, TaskModule taskModule, int byteSize)
+        {
+            ITypeConvertor convertor = null;
+            lock (TypeConvertorCollectionLock)
+            {
+                if (TypeConvertorCollection.ContainsKey(typeof(T)))
+                {
+                    convertor = TypeConvertorCollection[typeof(T)];
+                }
+            }
+            if (convertor != null)
+            {
+                AccessPort accessPort = null;
+                lock (AccessLock)
+                {
+                    accessPort = AccessPortCollection.FirstOrDefault(cell =>
+                    {
+                        return (cell.Key.Port == deviceInfo.Port);
+                        //return
+                        //   (cell.Key.DataBits == deviceInfo.DataBits) &&
+                        //   (cell.Key.StopBits == deviceInfo.StopBits) &&
+                        //   (cell.Key.Parity == deviceInfo.Parity) &&
+                        //   (cell.Key.Port == deviceInfo.Port) &&
+                        //   (cell.Key.BaudRate == deviceInfo.BaudRate) &&
+                        //   (cell.Key.Name == deviceInfo.Name);
+                    }).Value;
+                }
+
+                if (accessPort == null)
+                {
+                    throw new Exception("找不到设备对应端口");
+                }
+
+                byte[] bytes;
+                if (convertor.ByteSize > 0)
+                {
+                    bytes = accessPort.GetValues(taskModule, convertor.ByteSize);
+                }
+                else
+                {
+                    bytes = accessPort.GetValues(taskModule, byteSize);
+                }
+
+                return (T)convertor.Convert(bytes);
+            }
+
+            return default(T);
+        }
+
+        /// <summary>取值
+        /// 
+        /// </summary>
+        /// <typeparam name="T">目标类型</typeparam>
+        /// <param name="deviceInfo">设备信息</param>
+        /// <param name="taskModule">任务</param>
+        /// <param name="byteSize">需读取字节数</param>
+        /// <param name="convertor">类型转换器</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static T GetValues<T>(DeviceInfo deviceInfo, TaskModule taskModule, int byteSize, ITypeConvertor convertor)
+        {
+            if (convertor != null)
+            {
+                AccessPort accessPort = null;
+                lock (AccessLock)
+                {
+                    accessPort = AccessPortCollection.FirstOrDefault(cell =>
+                    {
+                        return (cell.Key.Port == deviceInfo.Port);
+                        //return
+                        //   (cell.Key.DataBits == deviceInfo.DataBits) &&
+                        //   (cell.Key.StopBits == deviceInfo.StopBits) &&
+                        //   (cell.Key.Parity == deviceInfo.Parity) &&
+                        //   (cell.Key.Port == deviceInfo.Port) &&
+                        //   (cell.Key.BaudRate == deviceInfo.BaudRate) &&
+                        //   (cell.Key.Name == deviceInfo.Name);
+                    }).Value;
+                }
+
+                if (accessPort == null)
+                {
+                    throw new Exception("找不到设备对应端口");
+                }
+
+                byte[] bytes;
+                if (convertor.ByteSize > 0)
+                {
+                    bytes = accessPort.GetValues(taskModule, convertor.ByteSize);
+                }
+                else
+                {
+                    bytes = accessPort.GetValues(taskModule, byteSize);
+                }
+
+                return (T)convertor.Convert(bytes);
+            }
+
             return default(T);
         }
     }
+
 }
