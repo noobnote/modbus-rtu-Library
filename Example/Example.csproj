@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0DAD89B3-27DB-482E-926C-B9AEEA2EEA51}</ProjectGuid>
+    <ProjectGuid>{36A4C383-BD11-4AFA-8001-54EE71B2BDB5}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>modbusrtu_command_generator</RootNamespace>
-    <AssemblyName>modbusrtu-command-generator</AssemblyName>
+    <RootNamespace>Example</RootNamespace>
+    <AssemblyName>Example</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -43,26 +43,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ModbusLibrary\ModbusCore\06Generator.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\05TaskModule.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\07TypeConvertor.cs" />
-    <Compile Include="ModbusLibrary\RawDataProcessors\ProcessorFor03.cs" />
-    <Compile Include="ModbusLibrary\TaskModules\01ReadBase.cs" />
-    <Compile Include="ModbusLibrary\TaskModules\02WriteBase.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\00ModbusManager.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\04DeviceInfo.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\01AccessPort.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\03IProcessRawData.cs" />
-    <Compile Include="ModbusLibrary\ModbusCore\02DataMemory.cs" />
-    <Compile Include="ModbusLibrary\Note.cs" />
-    <Compile Include="ModbusLibrary\TypeConverters\Int32ArrayConvertor.cs" />
-    <Compile Include="ModbusLibrary\TypeConverters\Int32Convertor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\modbusrtu-command-generator\ModbusLibrary.csproj">
+      <Project>{0dad89b3-27db-482e-926c-b9aeea2eea51}</Project>
+      <Name>ModbusLibrary</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

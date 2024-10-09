@@ -5,22 +5,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
+namespace ModbusLibrary.Core
 {
-    public class DeviceInfo
+    /// <summary>
+    /// 
+    /// </summary>
+    public class PortInfo  
     {
         /// <summary>COM端口
         /// 
         /// </summary>
-        public int Port { get; private set; }
-        /// <summary>站号
-        /// 
-        /// </summary>
-        public byte Host { get; private set; }
-        /// <summary>设备名
-        /// 
-        /// </summary>
-        public string Name { get; private set; }
+        public string Port { get; private set; }
         /// <summary>波特率
         /// 
         /// </summary>
@@ -37,20 +32,24 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// 
         /// </summary>
         public Parity Parity { get; private set; }
-        public DeviceInfo(int port, byte host, string name, int baudrate, StopBits stopBits, int dataBits, Parity parity)
+        public PortInfo(string port, int baudrate, StopBits stopBits, int dataBits, Parity parity)
         {
 
             this.Port = port;
-            this.Host = host;
-            this.Name = name;
             this.BaudRate = baudrate;
             this.StopBits = stopBits;
             this.Parity = parity;
             this.DataBits = dataBits;
         }
-        public static DeviceInfo Create(int port, byte host, string name, int baudrate, StopBits stopBits, int dataBits, Parity parity)
+        public override bool Equals(object obj)
         {
-            return new DeviceInfo(port, host, name, baudrate, stopBits, dataBits, parity);
+            if (obj == null) return false;
+
+            return this.GetHashCode() == obj.GetHashCode();
+        }
+        public override int GetHashCode()
+        {
+            return (Port, BaudRate, StopBits, Parity, DataBits).GetHashCode();
         }
     }
 }

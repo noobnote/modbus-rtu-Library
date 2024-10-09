@@ -1,11 +1,11 @@
-﻿using modbusrtu_command_generator.ModbusLibrary.ModbusCore;
+﻿using ModbusLibrary.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace modbusrtu_command_generator.ModbusLibrary.RawDataProcessors
+namespace ModbusLibrary.RawDataProcessors
 {
     public class ProcessorFor03 : IRawDataProcessor<IEnumerable<byte>>
     {

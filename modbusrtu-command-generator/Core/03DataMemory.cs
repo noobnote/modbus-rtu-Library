@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
+namespace ModbusLibrary.Core
 {
     /// <summary>数据存储器
     /// 
@@ -14,7 +14,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <summary>存储区域
         /// 
         /// </summary>
-        public enum Area
+        public enum MemoryArea
         {
             /// <summary>无意义
             /// 
@@ -37,7 +37,6 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
             /// </summary>
             IR,
         }
-
         /// <summary>目标主机站号
         /// 
         /// </summary>
@@ -87,30 +86,30 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
             this.TargetHost = targetHost;
         }
 
-        /// <summary>根据功能码判断存储区域
+        /// <summary>根据功能码转换为具体存储区域
         /// 
         /// </summary>
         /// <param name="functionCode">功能码</param>
         /// <returns>存储区域</returns>
-        public static Area JudgeArea(int functionCode)
+        public static MemoryArea ConvertToMemoryAre(int functionCode)
         {
-            Area area = Area.None;
+            MemoryArea area = MemoryArea.None;
 
             if (functionCode == 1)
             {
-                area = Area.CS;
+                area = MemoryArea.CS;
             }
             if (functionCode == 2)
             {
-                area = Area.DIS;
+                area = MemoryArea.DIS;
             }
             if (functionCode == 3)
             {
-                area = Area.HR;
+                area = MemoryArea.HR;
             }
             if (functionCode == 4)
             {
-                area = Area.IR;
+                area = MemoryArea.IR;
             }
             return area;
         }
@@ -121,11 +120,11 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <param name="area">存储区域</param>
         /// <param name="startAdderss">起始地址</param>
         /// <param name="data"></param>
-        public void SaveData(Area area, int startAdderss, byte[] data)
+        public void SaveData(MemoryArea area, int startAdderss, byte[] data)
         {
             switch (area)
             {
-                case Area.CS:
+                case MemoryArea.CS:
                     {
                         lock (_CSLock)
                         {
@@ -147,14 +146,14 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                         }
                     }
                     break;
-                case Area.DIS:
+                case MemoryArea.DIS:
                     {
                         lock (_DISLock)
                         {
                             if (this.DIS.Length < startAdderss - 1 + data.Length)
                             {
                                 int multiple = 1;
-                                while (this.CS.Length * multiple < startAdderss - 1 + data.Length)
+                                while (this.DIS.Length * multiple < startAdderss - 1 + data.Length)
                                 {
                                     multiple++;
                                 }
@@ -169,7 +168,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                         }
                     }
                     break;
-                case Area.HR:
+                case MemoryArea.HR:
                     {
                         lock (_HRLock)
                         {
@@ -177,7 +176,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                             if (this.HR.Length < startAdderss - 1 + data.Length)
                             {
                                 int multiple = 1;
-                                while (this.CS.Length * multiple < startAdderss - 1 + data.Length)
+                                while (this.HR.Length * multiple < startAdderss - 1 + data.Length)
                                 {
                                     multiple++;
                                 }
@@ -192,7 +191,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                         }
                     }
                     break;
-                case Area.IR:
+                case MemoryArea.IR:
                     {
                         lock (_IRLock)
                         {
@@ -200,7 +199,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                             if (this.IR.Length < startAdderss - 1 + data.Length)
                             {
                                 int multiple = 1;
-                                while (this.CS.Length * multiple < startAdderss - 1 + data.Length)
+                                while (this.IR.Length * multiple < startAdderss - 1 + data.Length)
                                 {
                                     multiple++;
                                 }
@@ -227,12 +226,12 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <param name="quantity">需要获取的字节数</param>
         /// <returns></returns>
         /// <exception cref="IndexOutOfRangeException"></exception>
-        public byte[] GetValues(Area area, int startAdderss, int quantity)
+        public byte[] GetValues(MemoryArea area, int startAdderss, int quantity)
         {
             byte[] bytes = new byte[quantity];
             switch (area)
             {
-                case Area.CS:
+                case MemoryArea.CS:
                     {
                         lock (_CSLock)
                         {
@@ -244,7 +243,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                         }
                     }
                     break;
-                case Area.DIS:
+                case MemoryArea.DIS:
                     {
                         lock (_DISLock)
                         {
@@ -256,7 +255,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                         }
                     }
                     break;
-                case Area.HR:
+                case MemoryArea.HR:
                     {
                         lock (_HRLock)
                         {
@@ -269,7 +268,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                         }
                     }
                     break;
-                case Area.IR:
+                case MemoryArea.IR:
                     {
                         lock (_IRLock)
                         {
@@ -286,4 +285,8 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
             return bytes;
         }
     }
+
+
+
+
 }

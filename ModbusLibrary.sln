@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34302.85
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "modbusrtu-command-generator", "modbusrtu-command-generator\modbusrtu-command-generator.csproj", "{0DAD89B3-27DB-482E-926C-B9AEEA2EEA51}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModbusLibrary", "modbusrtu-command-generator\ModbusLibrary.csproj", "{0DAD89B3-27DB-482E-926C-B9AEEA2EEA51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "Example\Example.csproj", "{36A4C383-BD11-4AFA-8001-54EE71B2BDB5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{0DAD89B3-27DB-482E-926C-B9AEEA2EEA51}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DAD89B3-27DB-482E-926C-B9AEEA2EEA51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0DAD89B3-27DB-482E-926C-B9AEEA2EEA51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36A4C383-BD11-4AFA-8001-54EE71B2BDB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36A4C383-BD11-4AFA-8001-54EE71B2BDB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36A4C383-BD11-4AFA-8001-54EE71B2BDB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36A4C383-BD11-4AFA-8001-54EE71B2BDB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

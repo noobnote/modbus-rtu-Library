@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
+namespace ModbusLibrary.Core
 {
     /// <summary>任务模块
     /// 

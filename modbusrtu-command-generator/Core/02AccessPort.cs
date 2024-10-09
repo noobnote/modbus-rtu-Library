@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
@@ -6,13 +7,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
+namespace ModbusLibrary.Core
 {
     /// <summary>访问端口
     /// 
     /// </summary>
     public class AccessPort
     {
+        /// <summary>端口号
+        /// 
+        /// </summary>
+        public string PortName { get; private set; }
 
         public delegate void AccessPortClosed(AccessPort accessPort);
 
@@ -22,11 +27,12 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
 
         private WaitHandle[] WaitHandles { get; set; }
 
-        public AccessPort(DeviceInfo deviceInfo)
+        public AccessPort(PortInfo deviceInfo)
         {
             this._serialPort = new SerialPort();
             _serialPort.BaudRate = deviceInfo.BaudRate;
-            _serialPort.PortName = "COM" + deviceInfo.Port.ToString();
+            //_serialPort.PortName = PortName = "COM" + deviceInfo.Port.ToString();
+            _serialPort.PortName = PortName = deviceInfo.Port.ToString();
             _serialPort.StopBits = deviceInfo.StopBits;//停止位
             _serialPort.DataBits = deviceInfo.DataBits;//数据位
             _serialPort.Parity = deviceInfo.Parity;//校验位
@@ -35,10 +41,11 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         public void OpenPort()
         {
             this.SerialPort?.Open();
+            BeginRunTask();
         }
         public void ClosePort()
         {
-            CloseAllTask();
+            CloseAllTasks();
             this.SerialPort?.Close();
         }
 
@@ -75,7 +82,10 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
             };
         }
 
-        private void Initialize()
+        /// <summary>初始化并运行核心线程
+        /// 
+        /// </summary>
+        private void InitializeAndLaunchCoreThread()
         {
             if (this.Begun)
             {
@@ -87,8 +97,8 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
 
             Task.Run(() =>
             {
-
-                while (true)
+                this.Begun = true;
+                while (this.Begun)
                 {
                     int signal = WaitHandle.WaitAny(WaitHandles);
                     switch (signal)
@@ -108,7 +118,8 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
                         case 2:
                             {
                                 this.AccessPortClosedEvent?.Invoke(this);
-                                return;
+                                this.Begun = false;
+                                break;
                             }
                     }
                 }
@@ -118,38 +129,36 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <summary>继续执行周期任务
         /// 
         /// </summary>
-        public void Continue()
+        private void Continue()
         {
             Periodic?.Set();
         }
         /// <summary>暂停执行周期任务
         /// 
         /// </summary>
-        public void Suspend()
+        private void Suspend()
         {
             Periodic?.Reset();
         }
         /// <summary>开始运行任务
         /// 
         /// </summary>
-        public void BeginRunTask()
+        private void BeginRunTask()
         {
-            Initialize();
-            this.Begun = true;
+            InitializeAndLaunchCoreThread();
         }
         /// <summary>关闭所有任务
         /// 
         /// </summary>
-        public void CloseAllTask()
+        private void CloseAllTasks()
         {
             Suspend();
             ExitEvent?.Set();
-            this.Begun = false;
         }
         /// <summary>运行任务且任务只执行一次
         /// 
         /// </summary>
-        public void OnlyOnceTask()
+        private void ExecuteOnlyOnceTask()
         {
             OnlyOnce?.Set();
         }
@@ -157,16 +166,15 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
 
 
 
-
-
         /// <summary>单次任务队列
         /// 
         /// </summary>
-        Queue<TaskModule> OnlyOnceTasks { get; set; } = new Queue<TaskModule>();
+        Queue<TaskBase> OnlyOnceTasks { get; set; } = new Queue<TaskBase>();
+
         /// <summary>周期任务队列
         /// 
         /// </summary>
-        List<TaskModule> PeriodicTasks { get; set; } = new List<TaskModule>();
+        List<TaskBase> PeriodicTasks { get; set; } = new List<TaskBase>();
         /// <summary>单次任务队列锁
         /// 
         /// </summary>
@@ -180,46 +188,56 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// 
         /// </summary>
         /// <param name="taskModule"></param>
-        public void AddPeriodicTask(TaskModule taskModule)
+        public async Task AddPeriodicTaskAsync<T>(T task) where T : TaskBase
         {
-            lock (PeriodicTasksLock)
+            await Task.Run(() =>
             {
-                PeriodicTasks.Add(taskModule);
-            }
-
+                lock (PeriodicTasksLock)
+                {
+                    PeriodicTasks.Add(task);
+                }
+            });
         }
+
+
         /// <summary>移除周期任务
         /// 
         /// </summary>
         /// <param name="taskModule"></param>
-        public void RemovePeriodicTask(TaskModule taskModule)
+        public async Task RemovePeriodicTaskAsync<T>(T task) where T : TaskBase
         {
-            lock (PeriodicTasksLock)
+            await Task.Run(() =>
             {
-                PeriodicTasks.Remove(taskModule);
-            }
+                lock (PeriodicTasksLock)
+                {
+                    PeriodicTasks.Remove(task);
+                }
+            });
         }
 
         /// <summary>添加单次任务
         /// 
         /// </summary>
         /// <param name="taskModule"></param>
-        public WaitHandle AddImmediateTask(TaskModule taskModule)
+        public async Task<WaitHandle> AddImmediateTaskAsync<T>(T task) where T : TaskBase
         {
-
-            taskModule.WaitHandle = new ManualResetEvent(false);
-            lock (OnlyOnceTasksLock)
+            return await Task.Run<WaitHandle>(() =>
             {
-                OnlyOnceTasks.Enqueue(taskModule);
-            }
-            return taskModule.WaitHandle;
+                task.WaitHandle = new ManualResetEvent(false);
+                lock (OnlyOnceTasksLock)
+                {
+                    OnlyOnceTasks.Enqueue(task);
+                }
+                ExecuteOnlyOnceTask();
+                return task.WaitHandle;
+            });
         }
 
         /// <summary>执行列表中的任务
         /// 
         /// </summary>
         /// <param name="onlyOnceTasks">仅用于区别</param>
-        void ExecuteTasks(Queue<TaskModule> onlyOnceTasks)
+        void ExecuteTasks(Queue<TaskBase> onlyOnceTasks)
         {
             lock (OnlyOnceTasksLock)
             {
@@ -238,7 +256,7 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// 
         /// </summary>
         /// <param name="periodicTasks">仅用于区别</param>
-        void ExecuteTasks(List<TaskModule> periodicTasks)
+        void ExecuteTasks(List<TaskBase> periodicTasks)
         {
             lock (PeriodicTasksLock)
             {
@@ -249,8 +267,23 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
             }
         }
 
+        ///// <summary>执行列表中的任务
+        ///// 
+        ///// </summary>
+        ///// <param name="periodicTasks">仅用于区别</param>
+        //void ExecuteTasks<T>(List<TaskBase> periodicTasks)
+        //{
+        //    lock (PeriodicTasksLock)
+        //    {
+        //        foreach (var task in PeriodicTasks)
+        //        {
+        //            Execute(task);
+        //        }
+        //    }
+        //}
 
-        public void Execute(TaskModule taskModule)
+
+        public void Execute<T>(T taskModule) where T : TaskBase
         {
             this.SerialPort.DiscardInBuffer();
             this.SerialPort.DiscardOutBuffer();
@@ -369,15 +402,14 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <summary>注册一个数据存储器
         /// 
         /// </summary>
-        /// <param name="host">远程主机站号</param>
         /// <param name="dataMemory">数据存储器</param>
-        public void RegistDataMemory(int host, DataMemory dataMemory)
+        public void RegistDataMemory(DataMemory dataMemory)
         {
             lock (MemoryDicLock)
             {
-                if (!MemoryDic.ContainsKey(host))
+                if (!MemoryDic.ContainsKey(dataMemory.TargetHost))
                 {
-                    MemoryDic.Add(host, dataMemory);
+                    MemoryDic.Add(dataMemory.TargetHost, dataMemory);
                 }
             }
         }
@@ -389,13 +421,13 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// </summary>
         /// <param name="taskModule">读取任务对象</param>
         /// <param name="data">需要被保存的数据</param>
-        private void SaveData(TaskModule taskModule, byte[] data)
+        private void SaveData<T>(T taskModule, byte[] data) where T : TaskBase
         {
             lock (MemoryDicLock)
             {
                 if (MemoryDic.ContainsKey(taskModule.Host))
                 {
-                    MemoryDic[taskModule.Host].SaveData(DataMemory.JudgeArea(taskModule.FunctionCode), taskModule.StartAddress, data);
+                    MemoryDic[taskModule.Host].SaveData(DataMemory.ConvertToMemoryAre(taskModule.FunctionCode), taskModule.StartAddress, data);
                 }
             }
         }
@@ -407,17 +439,13 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <param name="taskModule">读取任务对象</param>
         /// <param name="quantity">需要读取的byte数</param>
         /// <returns></returns>
-        public byte[] GetValues(TaskModule taskModule, int quantity)
+        public byte[] GetValues<T>(T taskModule, int quantity)where T : RequestInfo
         {
-            byte[] bytes = null;
-            lock (MemoryDicLock)
-            {
-                if (MemoryDic.ContainsKey(taskModule.Host))
-                {
-                    bytes = MemoryDic[taskModule.Host].GetValues(DataMemory.JudgeArea(taskModule.FunctionCode), taskModule.StartAddress, quantity);
-                }
-            }
-            return bytes;
+            //RequestInfo
+            return GetValues(taskModule.Host,
+                taskModule.MemoryArea,
+                taskModule.StartAddress,
+                quantity);
         }
 
         /// <summary>取值
@@ -428,17 +456,18 @@ namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
         /// <param name="startAddress">起始地址</param>
         /// <param name="quantity">需要读取的byte数</param>
         /// <returns></returns>
-        public byte[] GetValues(int host, int func, int startAddress, int quantity)
+        public byte[] GetValues(int host, DataMemory.MemoryArea area, int startAddress, int quantity)
         {
             byte[] bytes = null;
             lock (MemoryDicLock)
             {
                 if (MemoryDic.ContainsKey(host))
                 {
-                    bytes = MemoryDic[host].GetValues(DataMemory.JudgeArea(func), startAddress, quantity);
+                    bytes = MemoryDic[host].GetValues(area, startAddress, quantity);
                 }
             }
             return bytes;
         }
+
     }
 }

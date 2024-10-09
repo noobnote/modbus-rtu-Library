@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace modbusrtu_command_generator.ModbusLibrary.ModbusCore
+namespace ModbusLibrary.Core
 {
 
 
-    public class ModbusCrc16Calculator
+    public static class ModbusCrc16Calculator
     {
         //CRC16-Modbus的多项式是0x8005, 但是在工业通信中,一般是低位在前,高位在后的,所以就是0x8005的二进制反置后就变成了0xA001了
         private static readonly ushort polynomial = 0xA001;

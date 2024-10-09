@@ -32,6 +32,15 @@ namespace modbusrtu_command_generator
      * 
      * 2024-10-08
      * 1、【closed】可订阅AccessPort关闭事件
-     * 2、需要重写TaskModule的派生类
+     * 2、【closed】需要重写TaskModule的派生类
+     * 
+     * 
+     * 
+     * 2025-05-19
+     * 1、DataMemory类待修改：线圈、离散输入状态，它们的每个单元存储一个bit位，读取时不满8个位的按照1个byte返回
+     * 2、【closed】任务对象可能是整块地读取，但是取值时可能只取有限个byte（比如int32是4个），那么要求取值用的任务对象为TaskForRead是不合理的
+     * 3、TaskForRead和TaskForWrite的CreateCommand、GetExpectedByteCount方法需要具体实现
+     * 4、需要更多的IRawDataProcessor实现
+     * 5、单例创建、缓存器，应用于IRawDataProcessor（原始数据处理器）、报文生成器（）
      */
 }
